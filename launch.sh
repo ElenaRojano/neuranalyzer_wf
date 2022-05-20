@@ -35,8 +35,9 @@ if [ "$mode" == "1" ]; then
 	mkdir results
 	tail -n +2 $decipher_file | sed 's/# //g' > tmp_files/decipher_file_no_header.txt
 	paco_translator.rb -P tmp_files/decipher_file_no_header.txt -s start -e end -c chr -d patient_id -p hpo_accessions --n_phens 4 -o tmp_files/filtered_decipher.txt
-	sed -i "1i patient_id\tphenotypes\tchr\tstart\tend" tmp_files/filtered_decipher.txt
-	rm tmp_files/decipher_file_no_header.txt #Delete to avoid its analysis in workflow
+	awk '{print $1"\t"$3"\t"$4"\t"$5"\t"$2}' tmp_files/filtered_decipher.txt > tmp_files/decipher.txt
+	sed -i "1i patient_id\tchr\tstart\tstop\tphenotypes" tmp_files/decipher.txt
+	rm tmp_files/decipher_file_no_header.txt tmp_files/filtered_decipher.txt #Delete to avoid its analysis in workflow
 
 #2. Launch Autoflow:
 
