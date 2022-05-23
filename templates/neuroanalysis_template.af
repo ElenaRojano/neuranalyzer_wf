@@ -1,16 +1,6 @@
-%merge_and_compute_IC){
-        resources: -t '01:00:00'
-        source ~soft_bio_267/initializes/init_pets
-        ?
-        generate_HPO_IC_table.rb -b $HPO -i "$cohorts_path/*.txt" -o HPO_IC.txt
-}
-
 analyze_raw_cohort_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
-        cust_opt=`grep -P '^(*)' $custom_options | cut -f 2`
-        export ic_file=merge_and_compute_IC)/HPO_IC.txt
         ?
-        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq_internal -m '' -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop $cust_opt
-        # coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -m '' -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop $cust_opt
+        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq_internal -m '' -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin
 }
