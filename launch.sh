@@ -44,7 +44,7 @@ elif [ "$mode" == "S" ]; then
 	#Peripheral neuropathy #MONDO:0005244
 	#Inherited #MONDO:0021152
 	mkdir mondo_files
-	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/gene_disease.tsv
+	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/disease_gene.tsv
 	awk '{FS="\t"}{print $1"\t"$5}' downloaded_files/disease_phenotype.all.tsv | tail -n +2 > downloaded_files/disease_phenotype.tsv
 	# Find MONDO:0005244 children
 	semtools.rb -C MONDO:0005244 -O MONDO > mondo_files/neuropathies_codes.txt
@@ -65,6 +65,8 @@ elif [ "$mode" == "A" ]; then
         \\$mondo_hpo_file=$CODE_PATH'/tmp_files/neuropathies_hpo_agg.txt',
         \\$sim_thr=0.4,
         \\$scripts_path=$scripts_path,
+        \\$disease_gene_list=$CODE_PATH'/downloaded_files/disease_gene.tsv',
+        \\$annot_path=~pedro/references/hsGRc38/annotation.gtf,
         \\$cohorts_path=$cohorts_path" | tr -d [:space:]`
     AutoFlow -e -w $CODE_PATH/templates/neuroanalysis_template.af -V $AF_VARS -o $CODE_PATH/results -c 1 -m 5gb -t '03:00:00' $af_add_options
 fi
