@@ -15,10 +15,13 @@
 extract_patient_cluster_data_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         export PATH=$scripts_path:$PATH
+        source ~soft_bio_267/initializes/init_netanalyzer
         ?
         agg_data.rb -a !compare_mondo_*!/temp/profiles_similarity_lin.txt -b !compare_mondo_*!/temp/lin_clusters_rows.txt
-        get_gen_features.rb -i $cohorts_path/(*).txt -o patient_gene_list.txt -c chr -d patient_id -s start -e stop -r $annot_path -t gene -n gene_name
+        get_gen_features.rb -i $cohorts_path/(*).txt -o patient_gene_list.txt -c chr -d patient_id -s start -e stop -r $annot_path -t gene -n hgnc_id
         #2. Create list cluster-mondo-gene from MONDO and cluster-patient-gene from DECIPHER:
         agg_data.rb -e trio -f mondos_by_cluster.txt -d $disease_gene_list -b !compare_mondo_*!/temp/lin_clusters_rows.txt -c patient_gene_list.txt
-        sort -k 1 cluster_mondo_genes.txt > cluster_mondo_genes_sorted.txt
+        cut -f 1,3 cluster_decipher_genes.txt | sort -u | aggregate_column_data.rb -i - -x 0 -a 1 > agg_cluster_genes_by_patients.txt
+        cut -f 1,3 cluster_mondo_genes.txt | sort -u | aggregate_column_data.rb -i - -x 0 -a 1 > agg_cluster_genes_by_mondo.txt
+        ranker_gene.rb -k $kernel_matrix_bin -n $kernel_matrix_bin".lst" -s agg_cluster_genes_by_patients.txt -f agg_cluster_genes_by_mondo.txt -o ranked_genes
 }

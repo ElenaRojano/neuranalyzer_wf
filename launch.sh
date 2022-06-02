@@ -19,6 +19,7 @@ scripts_path=$CODE_PATH"/scripts"
 #PATHS TO FILES:
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
 cohorts='decipher'
+kernel_matrix_bin="/mnt/home/users/bio_267_uma/josecordoba/proyectos/phenotypes/ComRelOverIntNet/kernel/kernel_matrix_bin"
 
 #PROCEDURE:
 #1. Select DECIPHER patients
@@ -67,6 +68,7 @@ elif [ "$mode" == "A" ]; then
         \\$scripts_path=$scripts_path,
         \\$disease_gene_list=$CODE_PATH'/downloaded_files/disease_gene.tsv',
         \\$annot_path=~pedro/references/hsGRc38/annotation.gtf,
+        \\$kernel_matrix_bin=$kernel_matrix_bin,
         \\$cohorts_path=$cohorts_path" | tr -d [:space:]`
     AutoFlow -e -w $CODE_PATH/templates/neuroanalysis_template.af -V $AF_VARS -o $CODE_PATH/results -c 1 -m 5gb -t '03:00:00' $af_add_options
 fi
