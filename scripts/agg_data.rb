@@ -26,6 +26,21 @@ def load_patient_mondo_file(file)
   return patient_mondo_data
 end
 
+def load_two_cols_file(file)
+  storage = {}
+  File.open(file).each do |line|
+    line.chomp!
+    col1, col2 = line.split("\t")
+    query = storage[col1]
+    if query.nil?
+      storage[col1] = [col2]
+    else
+      query << col2
+    end
+  end
+  return storage
+end
+
 def load_file_save_hash(file, mode)
   storage = {}
   File.open(file).each do |line|
@@ -83,7 +98,7 @@ def write_hash(data_hash, output_file)
   end
 end
 
-def join_cluster_mondo_genes(mondo_genes_data, cluster_mondo_data, output_file)
+def join_three_cols(mondo_genes_data, cluster_mondo_data, output_file)
   File.open(output_file, 'w') do |f|
     cluster_mondo_data.each do |mondoID, clusterIDs|
       unless mondo_genes_data[mondoID].nil? #no genes for MONDOID
@@ -126,8 +141,8 @@ OptionParser.new do |opts|
     options[:input_mondo_gene_file] = data
   end
 
-  options[:exec_mode] = '1'
-  opts.on("-e", "--exec_mode PATH", "Aggregation execution mode. Please choose between: 1) Aggregate cluster and MONDO by patients; 2) Aggregate cluster IDs, MONDO IDs and MONDO genes") do |data|
+  options[:exec_mode] = 'duo'
+  opts.on("-e", "--exec_mode PATH", "Aggregation execution mode. Please choose between: duo) Aggregate two elements; trio) Aggregate three elements") do |data|
     options[:exec_mode] = data
   end
 
@@ -146,21 +161,30 @@ OptionParser.new do |opts|
     options[:output_cluster_mondo_genes] = data
   end
 
+  options[:output_cluster_patient_genes] = 'cluster_decipher_genes.txt'
+  opts.on("-q", "--output_cluster_patient_genes PATH", "Output file with cluster IDs, DECIPHER patient IDs and MONDO genes") do |data|
+    options[:output_cluster_patient_genes] = data
+  end
+
 end.parse!
 
 ##########################
 #MAIN
 ##########################
 
-if options[:exec_mode] == '1'
-  patient_mondo_data = load_patient_mondo_file(options[:input_patient_mondo_file])
+if options[:exec_mode] == 'duo'
+  patient_mondo_data = load_two_cols_file(options[:input_patient_mondo_file])
   patient_cluster_data = load_patient_cluster_file(options[:input_patient_cluster_file])
   cluster_mondo_data = join_mondo_cluster_by_patients(patient_mondo_data, patient_cluster_data)
   write_hash(cluster_mondo_data, options[:output_cluster_mondo])
-elsif options[:exec_mode] == '2'
+elsif options[:exec_mode] == 'trio'
   cluster_mondo_data = load_file_save_hash(options[:input_cluster_mondo_file], '2')
   mondo_genes_data = load_file_save_hash(options[:input_mondo_gene_file], '1')
-  join_cluster_mondo_genes(mondo_genes_data, cluster_mondo_data, options[:output_cluster_mondo_genes])
+  join_three_cols(mondo_genes_data, cluster_mondo_data, options[:output_cluster_mondo_genes])
+  
+  patient_cluster_data = load_two_cols_file(options[:input_patient_cluster_file])
+  patient_gene_data = load_two_cols_file(options[:input_patient_gene_file])
+  join_three_cols(patient_gene_data, patient_cluster_data, options[:output_cluster_patient_genes])
 else
   abort('Wrong execution mode. Please choose between 1 and 2')  
 end

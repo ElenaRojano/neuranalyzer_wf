@@ -18,7 +18,7 @@ extract_patient_cluster_data_[$all_cohorts]){
         ?
         agg_data.rb -a !compare_mondo_*!/temp/profiles_similarity_lin.txt -b !compare_mondo_*!/temp/lin_clusters_rows.txt
         get_gen_features.rb -i $cohorts_path/(*).txt -o patient_gene_list.txt -c chr -d patient_id -s start -e stop -r $annot_path -t gene -n gene_name
-        #2. Create list cluster-mondo-gene from MONDO:
-        agg_data.rb -e 2 -f mondos_by_cluster.txt -d $disease_gene_list
-        sort -k 1 cluster_mondo_genes.txt
+        #2. Create list cluster-mondo-gene from MONDO and cluster-patient-gene from DECIPHER:
+        agg_data.rb -e trio -f mondos_by_cluster.txt -d $disease_gene_list -b !compare_mondo_*!/temp/lin_clusters_rows.txt -c patient_gene_list.txt
+        sort -k 1 cluster_mondo_genes.txt > cluster_mondo_genes_sorted.txt
 }
