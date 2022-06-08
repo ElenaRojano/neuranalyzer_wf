@@ -1,0 +1,12 @@
+<div style="width: 90%; background-color:#ecf0f1; margin: 0 auto;">
+        <h1 style="text-align: center; background-color:#d6eaf8">General statistics</h1>
+        <%= table(id: 'statistics.txt', header: false, styled: 'bs', text: true, attrib: {'class' => 'table table-striped'})
+        %>
+</div>
+
+<div style="width: 90%; background-color:#ecf0f1; margin: 0 auto;">
+	<%=boxplot(id: 'ranked_genes_all_candidates', header: false, fields: [0,3], row_names: true) do |table|
+		table.first.map!{|hcell| 'rank'}
+	end
+	%>
+</div>

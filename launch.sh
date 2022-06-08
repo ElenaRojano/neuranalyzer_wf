@@ -68,6 +68,7 @@ elif [ "$mode" == "A" ]; then
         \\$scripts_path=$scripts_path,
         \\$disease_gene_list=$CODE_PATH'/downloaded_files/disease_gene.tsv',
         \\$annot_path=~pedro/references/hsGRc38/annotation.gtf,
+        \\$erb_template=$CODE_PATH'/templates/report_template.erb',
         \\$kernel_matrix_bin=$kernel_matrix_bin,
         \\$cohorts_path=$cohorts_path" | tr -d [:space:]`
     AutoFlow -e -w $CODE_PATH/templates/neuroanalysis_template.af -V $AF_VARS -o $CODE_PATH/results -c 1 -m 5gb -t '03:00:00' $af_add_options

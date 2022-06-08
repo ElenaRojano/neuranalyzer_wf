@@ -12,7 +12,7 @@
         coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -m '' -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $mondo_hpo_file --sim_thr $sim_thr
 }
 
-extract_patient_cluster_data_[$all_cohorts]){
+%extract_patient_cluster_data_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         export PATH=$scripts_path:$PATH
         source ~soft_bio_267/initializes/init_netanalyzer
@@ -24,4 +24,16 @@ extract_patient_cluster_data_[$all_cohorts]){
         cut -f 1,3 cluster_decipher_genes.txt | sort -u | aggregate_column_data.rb -i - -x 0 -a 1 > agg_cluster_genes_by_patients.txt
         cut -f 1,3 cluster_mondo_genes.txt | sort -u | aggregate_column_data.rb -i - -x 0 -a 1 > agg_cluster_genes_by_mondo.txt
         ranker_gene.rb -k $kernel_matrix_bin -n $kernel_matrix_bin".lst" -s agg_cluster_genes_by_patients.txt -f agg_cluster_genes_by_mondo.txt -o ranked_genes
+}
+
+generate_report_[$all_cohorts]){
+        resources: -m '20gb' -t '2-00:00:00' -n cal
+        source ~soft_bio_267/initializes/init_report_html
+        echo -e "cohort\t$cohorts_path/(*).txt" > all_paths.txt
+        echo -e "cohort_without_ref\t!analyze_raw_cohort_*!" >> all_paths.txt
+        echo -e "cohort_with_ref\t!compare_mondo_*!" >> all_paths.txt
+        echo -e "ranked_cohort\t!extract_patient_cluster_data_*!" >> all_paths.txt
+        statistics.rb -i all_paths.txt
+        ?
+        report_html -t $erb_template -d !extract_patient_cluster_data_*!/ranked_genes_all_candidates,statistics.txt
 }
