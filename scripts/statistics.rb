@@ -85,6 +85,27 @@ def save_file(output_file, metrics)
 	end
 end
 
+def load_two_cols_file(filename)
+	storage = {}
+	File.open(filename).each do |line|
+		line.chomp!
+		col1, col2 = line.split("\t")
+		storage[col1] = col2
+	end
+	return storage
+end
+
+def load_ranked_genes_file(filename)
+	ranked_genes_data = {}
+	File.open(filename).each do |line|
+		line.chomp!
+		col1, col2, col3, col4, col5 = line.split("\t")
+		ranked_genes_data[col1] = [col2, col3, col4, col5]
+	end	
+	return ranked_genes_data
+end
+
+
 ##########################
 #OPT-PARSE
 ##########################
@@ -125,11 +146,17 @@ path_to_files.each do |filename, path|
 
 	elsif filename == "cohort_with_ref"
 		mondo_refs = load_ref(options[:input_ref])
-		
+		mondo_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_cols.txt'))
+		patient_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_rows.txt'))
+		all_metrics['Number of MONDOs before clustering'] = mondo_refs.keys.length
+		all_metrics['Number of MONDOs after clustering'] = mondo_clusters.keys.length
+		all_metrics['Total of clusters in cohort with reference'] = mondo_clusters.values.uniq.length
+		all_metrics['Total of patients clustered'] = patient_clusters.keys.uniq.length
 	elsif filename == "ranked_cohort"
-
+		ranked_genes = load_ranked_genes_file(File.join(path, 'ranked_genes_all_candidates'))
+		#see if this info could be valuable to print or use in the summary table
 	else
-		abort("Wrong file name") #check if this checkpoint is necessary
+		abort("Wrong file name")
 	end
 
 end

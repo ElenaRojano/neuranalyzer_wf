@@ -44,11 +44,18 @@ elif [ "$mode" == "S" ]; then
 	#2. Launch Semtools:
 	#Peripheral neuropathy #MONDO:0005244
 	#Inherited #MONDO:0021152
+	# MONDO:0005244 -> Peripheral neuropathy
+	# MONDO:0020127 -> genetic peripheral neuropathy
 	mkdir mondo_files
 	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/disease_gene.tsv
 	awk '{FS="\t"}{print $1"\t"$5}' downloaded_files/disease_phenotype.all.tsv | tail -n +2 > downloaded_files/disease_phenotype.tsv
 	# Find MONDO:0005244 children
-	semtools.rb -C MONDO:0005244 -O MONDO > mondo_files/neuropathies_codes.txt
+	semtools.rb -C MONDO:0020127 -O MONDO > mondo_files/neuropathies_codes.txt
+	echo 'MONDO:0020127' >> mondo_files/neuropathies_codes.txt 
+	
+	#semtools.rb -C MONDO:0005244 -O MONDO > mondo_files/neuropathies_codes.txt
+	#echo 'MONDO:0005244' >> mondo_files/neuropathies_codes.txt 
+	
 	# Add MONDO names to file with codes
 	semtools.rb -i mondo_files/neuropathies_codes.txt -O MONDO -l names > mondo_files/neuropathies_names.txt
 	# Find MONDO codes in MONDO-HPO file:

@@ -1,18 +1,18 @@
-%analyze_raw_cohort_[$all_cohorts]){
+analyze_raw_cohort_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
         ?
         coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -m '' -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin
 }
 
-%compare_mondo_[$all_cohorts]){
+compare_mondo_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
         ?
         coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -m '' -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $mondo_hpo_file --sim_thr $sim_thr
 }
 
-%extract_patient_cluster_data_[$all_cohorts]){
+extract_patient_cluster_data_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         export PATH=$scripts_path:$PATH
         source ~soft_bio_267/initializes/init_netanalyzer
