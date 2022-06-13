@@ -150,7 +150,7 @@ path_to_files.each do |filename, path|
 		patient_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_rows.txt'))
 		all_metrics['Number of MONDOs before clustering'] = mondo_refs.keys.length
 		all_metrics['Number of MONDOs after clustering'] = mondo_clusters.keys.length
-		all_metrics['Total of clusters in cohort with reference'] = mondo_clusters.values.uniq.length
+		all_metrics['Total of clusters in cohort with reference'] = patient_clusters.values.uniq.length
 		all_metrics['Total of patients clustered'] = patient_clusters.keys.uniq.length
 	elsif filename == "ranked_cohort"
 		ranked_genes = load_ranked_genes_file(File.join(path, 'ranked_genes_all_candidates'))

@@ -10,7 +10,6 @@ CODE_PATH=`pwd`
 mode=$1 
 af_add_options=$2 #AutoFlow Additional options
 
-mkdir tmp_files
 mkdir results
 mkdir cohorts
 cohorts_path=$CODE_PATH"/cohorts"
@@ -47,6 +46,7 @@ elif [ "$mode" == "S" ]; then
 	# MONDO:0005244 -> Peripheral neuropathy
 	# MONDO:0020127 -> genetic peripheral neuropathy
 	mkdir mondo_files
+	mkdir tmp_files
 	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/disease_gene.tsv
 	awk '{FS="\t"}{print $1"\t"$5}' downloaded_files/disease_phenotype.all.tsv | tail -n +2 > downloaded_files/disease_phenotype.tsv
 	# Find MONDO:0005244 children

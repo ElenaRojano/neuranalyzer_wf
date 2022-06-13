@@ -28,12 +28,13 @@ extract_patient_cluster_data_[$all_cohorts]){
 
 generate_report_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
+        export PATH=$scripts_path:$PATH
         source ~soft_bio_267/initializes/init_report_html
         echo -e "cohort\t$cohorts_path/(*).txt" > all_paths.txt
         echo -e "cohort_without_ref\t!analyze_raw_cohort_*!" >> all_paths.txt
         echo -e "cohort_with_ref\t!compare_mondo_*!" >> all_paths.txt
         echo -e "ranked_cohort\t!extract_patient_cluster_data_*!" >> all_paths.txt
-        statistics.rb -i all_paths.txt
+        statistics.rb -i all_paths.txt -r $mondo_hpo_file
         ?
         report_html -t $erb_template -d !extract_patient_cluster_data_*!/ranked_genes_all_candidates,statistics.txt
 }
