@@ -19,10 +19,13 @@ scripts_path=$CODE_PATH"/scripts"
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
 cohorts='decipher'
 kernel_matrix_bin="/mnt/home/users/bio_267_uma/josecordoba/proyectos/phenotypes/ComRelOverIntNet/kernel/kernel_matrix_bin"
+mondos=( 'pn' 'gpn' )
+
 
 #PROCEDURE:
-#1. Select DECIPHER patients
-if [ "$mode" == "1" ]; then
+	
+if [ "$mode" == "D" ]; then
+	echo 'Downloading files...'
 	mkdir downloaded_files
 	# 1. Download genes and MONDO file.
 	wget "https://data.monarchinitiative.org/latest/tsv/all_associations/gene_disease.all.tsv.gz" -O downloaded_files/gene_disease.all.tsv.gz
@@ -30,6 +33,9 @@ if [ "$mode" == "1" ]; then
 	# 2. Download MONDO and HPO file.
 	wget "https://data.monarchinitiative.org/latest/tsv/all_associations/disease_phenotype.all.tsv.gz" -O downloaded_files/disease_phenotype.all.tsv.gz
 	gzip -d downloaded_files/disease_phenotype.all.tsv.gz
+	# 3. Download DECIPHER population CNVs file.
+	wget "https://www.deciphergenomics.org/files/downloads/population_cnv_grch38.txt.gz" -O downloaded_files/population_cnv_grch38.txt.gz
+	gzip -d downloaded_files/population_cnv_grch38.txt.gz
 
 elif [ "$mode" == "2" ]; then
 	tail -n +2 $decipher_file | sed 's/# //g' > cohorts/decipher_file_no_header.txt
@@ -47,8 +53,11 @@ elif [ "$mode" == "S" ]; then
 	# MONDO:0020127 -> genetic peripheral neuropathy
 	mkdir mondo_files
 	mkdir tmp_files
+	mkdir mondo_cohorts
 	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/disease_gene.tsv
-	awk '{FS="\t"}{print $1"\t"$5}' downloaded_files/disease_phenotype.all.tsv | tail -n +2 > downloaded_files/disease_phenotype.tsv
+	awk '{FS="\t"}{print $1"\t"$5}' downloaded_files/disease_phenotype.all.tsv | tail -n +2 > downloaded_files/disease_phenotype_nofilt.tsv
+	table_header.rb -t downloaded_files/disease_phenotype_nofilt.tsv -c 0,1 -f 1 -k 'HP:' > downloaded_files/disease_phenotype.tsv
+
 	# Find MONDO:0005244 children
 	semtools.rb -C MONDO:0020127 -O MONDO > mondo_files/neuropathies_codes.txt
 	echo 'MONDO:0020127' >> mondo_files/neuropathies_codes.txt 
@@ -61,15 +70,23 @@ elif [ "$mode" == "S" ]; then
 	# Find MONDO codes in MONDO-HPO file:
 	grep -F -f mondo_files/neuropathies_codes.txt downloaded_files/disease_phenotype.tsv > tmp_files/neuropathies_hpo.txt
 	aggregate_column_data.rb -i tmp_files/neuropathies_hpo.txt -x 0 -a 1 -s ',' > tmp_files/neuropathies_hpo_agg.txt
-	aggregate_column_data.rb -i tmp_files/neuropathies_hpo.txt -x 1 -a 0 -s ',' > tmp_files/neuropathies_hpo_agg_inv.txt
+	aggregate_column_data.rb -i tmp_files/neuropathies_hpo.txt -x 1 -a 0 -s ';' > tmp_files/neuropathies_hpo_agg_inv.txt
 	# Expandir listas por propagación:
-	semtools.rb -i tmp_files/neuropathies_hpo_agg_inv.txt -O MONDO -e propagate -o tmp_files/neuropathies_hpo_agg_prop.txt
+	# Use MONDO:0005244 as root
+	semtools.rb -i tmp_files/neuropathies_hpo_agg_inv.txt -O MONDO -e propagate -R 'MONDO:0005244' -o tmp_files/neuropathies_hpo_agg_prop.txt 
+	#mondo -> hpo
+	desaggregate_column_data.rb -i tmp_files/neuropathies_hpo_agg_prop.txt -x 1 -s '|' | aggregate_column_data.rb -i - -x 1 -a 0 -s ',' > tmp_files/neuro_mondo_hpo_agg_exp.txt
+	#añade las cohortes de mondo en otro path:
+	cp tmp_files/neuro_mondo_hpo_agg_exp.txt mondo_cohorts/gpn_cohort.txt
 
 
 elif [ "$mode" == "A" ]; then
 	#3. Launch Autoflow:
     AF_VARS=`echo -e "
         \\$all_cohorts=$cohorts,
+        \\$mondo_cohorts=$CODE_PATH'/mondo_cohorts',
+        \\$mondos=$mondos,
+        \\$mondo_hpo_file_exp=$CODE_PATH'/tmp_files/neuro_mondo_hpo_agg_exp.txt',
         \\$mondo_hpo_file=$CODE_PATH'/tmp_files/neuropathies_hpo_agg.txt',
         \\$sim_thr=0.4,
         \\$scripts_path=$scripts_path,

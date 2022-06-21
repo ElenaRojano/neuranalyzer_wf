@@ -1,18 +1,18 @@
-analyze_raw_cohort_[$all_cohorts]){
+%analyze_raw_cohort_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
         ?
-        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -m '' -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin
+        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin
 }
 
-compare_mondo_[$all_cohorts]){
+%compare_mondo_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
         ?
-        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -m '' -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $mondo_hpo_file --sim_thr $sim_thr
+        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $mondo_hpo_file_exp --sim_thr $sim_thr
 }
 
-extract_patient_cluster_data_[$all_cohorts]){
+%extract_patient_cluster_data_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         export PATH=$scripts_path:$PATH
         source ~soft_bio_267/initializes/init_netanalyzer
@@ -26,7 +26,7 @@ extract_patient_cluster_data_[$all_cohorts]){
         ranker_gene.rb -k $kernel_matrix_bin -n $kernel_matrix_bin".lst" -s agg_cluster_genes_by_patients.txt -f agg_cluster_genes_by_mondo.txt -o ranked_genes
 }
 
-generate_report_[$all_cohorts]){
+%generate_report_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         export PATH=$scripts_path:$PATH
         source ~soft_bio_267/initializes/init_report_html
@@ -34,7 +34,14 @@ generate_report_[$all_cohorts]){
         echo -e "cohort_without_ref\t!analyze_raw_cohort_*!" >> all_paths.txt
         echo -e "cohort_with_ref\t!compare_mondo_*!" >> all_paths.txt
         echo -e "ranked_cohort\t!extract_patient_cluster_data_*!" >> all_paths.txt
-        statistics.rb -i all_paths.txt -r $mondo_hpo_file
+        statistics.rb -i all_paths.txt -r $mondo_hpo_file -e $mondo_hpo_file_exp
         ?
         report_html -t $erb_template -d !extract_patient_cluster_data_*!/ranked_genes_all_candidates,statistics.txt
+}
+
+analyze_mondo_cohort_[$mondos]){
+        resources: -m '20gb' -t '2-00:00:00' -n cal
+        source ~soft_bio_267/initializes/init_pets
+        ?
+        coPatReporter.rb -i $mondo_cohorts/(*).txt -o results_mondo_(*) -t freq -H -p 1 -T [cpu] -f 2 -d 0 -C 25 -m lin --sim_thr $sim_thr
 }
