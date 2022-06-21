@@ -19,7 +19,7 @@ scripts_path=$CODE_PATH"/scripts"
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
 cohorts='decipher'
 kernel_matrix_bin="/mnt/home/users/bio_267_uma/josecordoba/proyectos/phenotypes/ComRelOverIntNet/kernel/kernel_matrix_bin"
-mondos=( 'pn' 'gpn' )
+mondos=( 'gpn' )
 
 
 #PROCEDURE:
@@ -37,7 +37,7 @@ if [ "$mode" == "D" ]; then
 	wget "https://www.deciphergenomics.org/files/downloads/population_cnv_grch38.txt.gz" -O downloaded_files/population_cnv_grch38.txt.gz
 	gzip -d downloaded_files/population_cnv_grch38.txt.gz
 
-elif [ "$mode" == "2" ]; then
+elif [ "$mode" == "C" ]; then
 	tail -n +2 $decipher_file | sed 's/# //g' > cohorts/decipher_file_no_header.txt
 	paco_translator.rb -P cohorts/decipher_file_no_header.txt -s start -e end -c chr -d patient_id -p hpo_accessions --n_phens 4 -o cohorts/filtered_decipher.txt
 	awk '{print $1"\t"$3"\t"$4"\t"$5"\t"$2}' cohorts/filtered_decipher.txt > cohorts/decipher.txt
@@ -77,7 +77,7 @@ elif [ "$mode" == "S" ]; then
 	#mondo -> hpo
 	desaggregate_column_data.rb -i tmp_files/neuropathies_hpo_agg_prop.txt -x 1 -s '|' | aggregate_column_data.rb -i - -x 1 -a 0 -s ',' > tmp_files/neuro_mondo_hpo_agg_exp.txt
 	#añade las cohortes de mondo en otro path:
-	cp tmp_files/neuro_mondo_hpo_agg_exp.txt mondo_cohorts/gpn_cohort.txt
+	cp tmp_files/neuro_mondo_hpo_agg_exp.txt mondo_cohorts/gpn.txt
 
 
 elif [ "$mode" == "A" ]; then

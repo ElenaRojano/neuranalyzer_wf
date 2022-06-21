@@ -43,5 +43,5 @@ analyze_mondo_cohort_[$mondos]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
         ?
-        coPatReporter.rb -i $mondo_cohorts/(*).txt -o results_mondo_(*) -t freq -H -p 1 -T [cpu] -f 2 -d 0 -C 25 -m lin --sim_thr $sim_thr
+        coPatReporter.rb -i $mondo_cohorts/(*).txt -o results_mondo_(*) -t freq -H -p 1 -T [cpu] -f 2 -d 0 -C 25 -m lin --sim_thr $sim_thr -S ','
 }
