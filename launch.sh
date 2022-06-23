@@ -19,8 +19,8 @@ scripts_path=$CODE_PATH"/scripts"
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
 cohorts='decipher'
 kernel_matrix_bin="/mnt/home/users/bio_267_uma/josecordoba/proyectos/phenotypes/ComRelOverIntNet/kernel/kernel_matrix_bin"
-mondos=( 'gpn_pro' 'gpn_nopro' ) #gpn == genetic peripheral neuropathies
 
+mondos='gpn_pro;gpn_nopro' #gpn == genetic peripheral neuropathies. defined as autoflow variable.
 
 #PROCEDURE:
 	
@@ -78,8 +78,8 @@ elif [ "$mode" == "S" ]; then
 	#mondo -> hpo
 	desaggregate_column_data.rb -i tmp_files/neuropathies_hpo_agg_prop.txt -x 1 -s '|' | aggregate_column_data.rb -i - -x 1 -a 0 -s ',' > tmp_files/neuro_mondo_hpo_agg_exp.txt
 	#añade las cohortes de mondo en otro path:
-	cp tmp_files/neuro_mondo_hpo_agg_exp.txt mondo_cohorts/gpn_pro.txt
-	cp tmp_files/neuropathies_hpo_agg.txt mondo_cohorts/gpn_nopro.txt
+	ln -s tmp_files/neuropathies_hpo_agg.txt mondo_cohorts/gpn_nopro.txt #before prop
+	ln -s tmp_files/neuro_mondo_hpo_agg_exp.txt mondo_cohorts/gpn_pro.txt #after prop
 
 
 elif [ "$mode" == "A" ]; then
