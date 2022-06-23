@@ -19,7 +19,7 @@ scripts_path=$CODE_PATH"/scripts"
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
 cohorts='decipher'
 kernel_matrix_bin="/mnt/home/users/bio_267_uma/josecordoba/proyectos/phenotypes/ComRelOverIntNet/kernel/kernel_matrix_bin"
-mondos=( 'gpn' )
+mondos=( 'gpn_pro' 'gpn_nopro' ) #gpn == genetic peripheral neuropathies
 
 
 #PROCEDURE:
@@ -53,6 +53,7 @@ elif [ "$mode" == "S" ]; then
 	# MONDO:0020127 -> genetic peripheral neuropathy
 	mkdir mondo_files
 	mkdir tmp_files
+	rm -rf mondo_cohorts
 	mkdir mondo_cohorts
 	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/disease_gene.tsv
 	awk '{FS="\t"}{print $1"\t"$5}' downloaded_files/disease_phenotype.all.tsv | tail -n +2 > downloaded_files/disease_phenotype_nofilt.tsv
@@ -77,7 +78,8 @@ elif [ "$mode" == "S" ]; then
 	#mondo -> hpo
 	desaggregate_column_data.rb -i tmp_files/neuropathies_hpo_agg_prop.txt -x 1 -s '|' | aggregate_column_data.rb -i - -x 1 -a 0 -s ',' > tmp_files/neuro_mondo_hpo_agg_exp.txt
 	#añade las cohortes de mondo en otro path:
-	cp tmp_files/neuro_mondo_hpo_agg_exp.txt mondo_cohorts/gpn.txt
+	cp tmp_files/neuro_mondo_hpo_agg_exp.txt mondo_cohorts/gpn_pro.txt
+	cp tmp_files/neuropathies_hpo_agg.txt mondo_cohorts/gpn_nopro.txt
 
 
 elif [ "$mode" == "A" ]; then
