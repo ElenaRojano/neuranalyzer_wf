@@ -5,7 +5,7 @@
         coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin
 }
 
-%compare_mondo_[$all_cohorts]){
+compare_mondo_[$all_cohorts]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
         ?
@@ -39,9 +39,17 @@
         report_html -t $erb_template -d !extract_patient_cluster_data_*!/ranked_genes_all_candidates,statistics.txt
 }
 
-analyze_mondo_cohort_[$mondos]){
+%analyze_mondo_cohort_[$diseases]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
         ?
-        coPatReporter.rb -i $mondo_cohorts/(*).txt -o results_mondo_(*) -t freq -H -p 1 -f 2 -d 0 -C 25 -m lin -S ','
+        coPatReporter.rb -i $path_to_disease_files/(*).txt -o results_(*) -t freq -H -p 1 -f 2 -d 0 -C 25 -m lin -S ','
+}
+
+%compare_diseases_[$diseases]){
+        #NOTE: ERASE THIS NODE AND ADD INFO TO SECOND NODE
+        resources: -m '20gb' -t '2-00:00:00' -n cal
+        source ~soft_bio_267/initializes/init_pets
+        ?
+        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $diseases_path/(*) --sim_thr $sim_thr
 }

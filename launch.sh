@@ -19,8 +19,7 @@ scripts_path=$CODE_PATH"/scripts"
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
 cohorts='decipher'
 kernel_matrix_bin="/mnt/home/users/bio_267_uma/josecordoba/proyectos/phenotypes/ComRelOverIntNet/kernel/kernel_matrix_bin"
-
-mondos='gpn_pro;gpn_nopro' #gpn == genetic peripheral neuropathies. defined as autoflow variable.
+diseases='gpn_pro;gpn_nopro;omim;orpha' #gpn == genetic peripheral neuropathies. defined as autoflow variable.
 
 #PROCEDURE:
 	
@@ -36,6 +35,8 @@ if [ "$mode" == "D" ]; then
 	# 3. Download DECIPHER population CNVs file.
 	wget "https://www.deciphergenomics.org/files/downloads/population_cnv_grch38.txt.gz" -O downloaded_files/population_cnv_grch38.txt.gz
 	gzip -d downloaded_files/population_cnv_grch38.txt.gz
+	# 4. Download phenotype.hpoa file 
+	wget 'http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa' -O downloaded_files/phenotype.hpoa
 
 elif [ "$mode" == "C" ]; then
 	tail -n +2 $decipher_file | sed 's/# //g' > cohorts/decipher_file_no_header.txt
@@ -46,15 +47,22 @@ elif [ "$mode" == "C" ]; then
 
 
 elif [ "$mode" == "S" ]; then
-	#2. Launch Semtools:
+	########## Launching Semtools:
+
 	#Peripheral neuropathy #MONDO:0005244
 	#Inherited #MONDO:0021152
 	# MONDO:0005244 -> Peripheral neuropathy
 	# MONDO:0020127 -> genetic peripheral neuropathy
+	
+	rm -rf diseases_list	
+	mkdir diseases_list
+	mkdir hpo_files
 	mkdir mondo_files
 	mkdir tmp_files
-	rm -rf mondo_cohorts
-	mkdir mondo_cohorts
+	
+	# STAGE 1: Prepare MONDO diseases data for analysis: with and without propagation.
+	# ----------
+
 	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/disease_gene.tsv
 	awk '{FS="\t"}{print $1"\t"$5}' downloaded_files/disease_phenotype.all.tsv | tail -n +2 > downloaded_files/disease_phenotype_nofilt.tsv
 	table_header.rb -t downloaded_files/disease_phenotype_nofilt.tsv -c 0,1 -f 1 -k 'HP:' > downloaded_files/disease_phenotype.tsv
@@ -78,16 +86,34 @@ elif [ "$mode" == "S" ]; then
 	#mondo -> hpo
 	desaggregate_column_data.rb -i tmp_files/neuropathies_hpo_agg_prop.txt -x 1 -s '|' | aggregate_column_data.rb -i - -x 1 -a 0 -s ',' > tmp_files/neuro_mondo_hpo_agg_exp.txt
 	#añade las cohortes de mondo en otro path:
-	ln -s tmp_files/neuropathies_hpo_agg.txt mondo_cohorts/gpn_nopro.txt #before prop
-	ln -s tmp_files/neuro_mondo_hpo_agg_exp.txt mondo_cohorts/gpn_pro.txt #after prop
+	ln -s ../tmp_files/neuropathies_hpo_agg.txt diseases_list/gpn_nopro.txt #before prop
+	ln -s ../tmp_files/neuro_mondo_hpo_agg_exp.txt diseases_list/gpn_pro.txt #after prop
+
+	# STAGE 2: Prepare OMIM and Orpha diseases data for analysis from HP:0009830.
+	# ----------
+	#Prepare list of HPOs from HP:0009830
+
+	semtools.rb -C HP:0009830 -O HPO > hpo_files/perineuro_hpo_codes.txt
+	echo 'HP:0009830' >> hpo_files/perineuro_hpo_codes.txt
+	
+	# Get OMIM/ORPHA diseases described with neuropathies-related HPOs:
+	aggregate_column_data.rb -i downloaded_files/phenotype.hpoa -x 0 -a 3 -s ',' | grep -v '#' > tmp_files/filtered_phenotype.hpoa
+	grep -F -f hpo_files/perineuro_hpo_codes.txt tmp_files/filtered_phenotype.hpoa | sort -u > tmp_files/perineuro_diseases.txt
+	
+	# Get ORPHA codes and aggregate HPOs:
+	grep 'ORPHA:' tmp_files/perineuro_diseases.txt > tmp_files/perineuro_orpha_hpos.txt
+	
+	# Get OMIM codes and aggregate HPOs:
+	grep 'OMIM:' tmp_files/perineuro_diseases.txt > tmp_files/perineuro_omim_hpos.txt
+
+	ln -s ../tmp_files/perineuro_omim_hpos.txt diseases_list/omim.txt
+	ln -s ../tmp_files/perineuro_orpha_hpos.txt diseases_list/orpha.txt
 
 
 elif [ "$mode" == "A" ]; then
 	#3. Launch Autoflow:
     AF_VARS=`echo -e "
         \\$all_cohorts=$cohorts,
-        \\$mondo_cohorts=$CODE_PATH'/mondo_cohorts',
-        \\$mondos=$mondos,
         \\$mondo_hpo_file_exp=$CODE_PATH'/tmp_files/neuro_mondo_hpo_agg_exp.txt',
         \\$mondo_hpo_file=$CODE_PATH'/tmp_files/neuropathies_hpo_agg.txt',
         \\$sim_thr=0.4,
@@ -96,6 +122,8 @@ elif [ "$mode" == "A" ]; then
         \\$annot_path=~pedro/references/hsGRc38/annotation.gtf,
         \\$erb_template=$CODE_PATH'/templates/report_template.erb',
         \\$kernel_matrix_bin=$kernel_matrix_bin,
+        \\$path_to_disease_files=$CODE_PATH'/diseases_list',
+        \\$diseases=$diseases,
         \\$cohorts_path=$cohorts_path" | tr -d [:space:]`
     AutoFlow -e -w $CODE_PATH/templates/neuroanalysis_template.af -V $AF_VARS -o $CODE_PATH/results -c 1 -m 5gb -t '03:00:00' $af_add_options
 fi
