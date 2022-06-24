@@ -5,11 +5,11 @@
         coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin
 }
 
-compare_mondo_[$all_cohorts]){
+compare_mondo_[$diseases]){
         resources: -m '20gb' -t '2-00:00:00' -n cal
         source ~soft_bio_267/initializes/init_pets
         ?
-        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $mondo_hpo_file_exp --sim_thr $sim_thr
+        coPatReporter.rb -i $cohorts_path/decipher.txt -o results_raw_decipher -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $path_to_disease_files/(*).txt --sim_thr $sim_thr
 }
 
 %extract_patient_cluster_data_[$all_cohorts]){
@@ -34,7 +34,7 @@ compare_mondo_[$all_cohorts]){
         echo -e "cohort_without_ref\t!analyze_raw_cohort_*!" >> all_paths.txt
         echo -e "cohort_with_ref\t!compare_mondo_*!" >> all_paths.txt
         echo -e "ranked_cohort\t!extract_patient_cluster_data_*!" >> all_paths.txt
-        statistics.rb -i all_paths.txt -r $mondo_hpo_file -e $mondo_hpo_file_exp
+        statistics.rb -i all_paths.txt -r $path_to_disease_files/'gpn_nopro.txt' -e $path_to_disease_files/'gpn_pro.txt'
         ?
         report_html -t $erb_template -d !extract_patient_cluster_data_*!/ranked_genes_all_candidates,statistics.txt
 }
@@ -44,12 +44,4 @@ compare_mondo_[$all_cohorts]){
         source ~soft_bio_267/initializes/init_pets
         ?
         coPatReporter.rb -i $path_to_disease_files/(*).txt -o results_(*) -t freq -H -p 1 -f 2 -d 0 -C 25 -m lin -S ','
-}
-
-%compare_diseases_[$diseases]){
-        #NOTE: ERASE THIS NODE AND ADD INFO TO SECOND NODE
-        resources: -m '20gb' -t '2-00:00:00' -n cal
-        source ~soft_bio_267/initializes/init_pets
-        ?
-        coPatReporter.rb -i $cohorts_path/(*).txt -o results_raw_(*) -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $diseases_path/(*) --sim_thr $sim_thr
 }

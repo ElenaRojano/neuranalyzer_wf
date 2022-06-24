@@ -114,8 +114,6 @@ elif [ "$mode" == "A" ]; then
 	#3. Launch Autoflow:
     AF_VARS=`echo -e "
         \\$all_cohorts=$cohorts,
-        \\$mondo_hpo_file_exp=$CODE_PATH'/tmp_files/neuro_mondo_hpo_agg_exp.txt',
-        \\$mondo_hpo_file=$CODE_PATH'/tmp_files/neuropathies_hpo_agg.txt',
         \\$sim_thr=0.4,
         \\$scripts_path=$scripts_path,
         \\$disease_gene_list=$CODE_PATH'/downloaded_files/disease_gene.tsv',
@@ -127,4 +125,7 @@ elif [ "$mode" == "A" ]; then
         \\$cohorts_path=$cohorts_path" | tr -d [:space:]`
     AutoFlow -e -w $CODE_PATH/templates/neuroanalysis_template.af -V $AF_VARS -o $CODE_PATH/results -c 1 -m 5gb -t '03:00:00' $af_add_options
 fi
+
+#\\$mondo_hpo_file=$CODE_PATH'/tmp_files/neuropathies_hpo_agg.txt',
+#\\$mondo_hpo_file_exp=$CODE_PATH'/tmp_files/neuro_mondo_hpo_agg_exp.txt',
 
