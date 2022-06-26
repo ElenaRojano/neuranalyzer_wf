@@ -12,8 +12,8 @@ af_add_options=$2 #AutoFlow Additional options
 
 mkdir results
 mkdir cohorts
-cohorts_path=$CODE_PATH"/cohorts"
 scripts_path=$CODE_PATH"/scripts"
+cohort_path=$CODE_PATH"/cohorts/decipher.txt"
 
 #PATHS TO FILES:
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
@@ -43,8 +43,7 @@ elif [ "$mode" == "C" ]; then
 	paco_translator.rb -P cohorts/decipher_file_no_header.txt -s start -e end -c chr -d patient_id -p hpo_accessions --n_phens 4 -o cohorts/filtered_decipher.txt
 	awk '{print $1"\t"$3"\t"$4"\t"$5"\t"$2}' cohorts/filtered_decipher.txt > cohorts/decipher.txt
 	sed -i "1i patient_id\tchr\tstart\tstop\tphenotypes" cohorts/decipher.txt
-	rm cohorts/decipher_file_no_header.txt cohorts/filtered_decipher.txt #Delete to avoid its analysis in workflow
-
+	
 
 elif [ "$mode" == "S" ]; then
 	########## Launching Semtools:
@@ -113,7 +112,6 @@ elif [ "$mode" == "S" ]; then
 elif [ "$mode" == "A" ]; then
 	#3. Launch Autoflow:
     AF_VARS=`echo -e "
-        \\$all_cohorts=$cohorts,
         \\$sim_thr=0.4,
         \\$scripts_path=$scripts_path,
         \\$disease_gene_list=$CODE_PATH'/downloaded_files/disease_gene.tsv',
@@ -122,8 +120,8 @@ elif [ "$mode" == "A" ]; then
         \\$kernel_matrix_bin=$kernel_matrix_bin,
         \\$path_to_disease_files=$CODE_PATH'/diseases_list',
         \\$diseases=$diseases,
-        \\$cohorts_path=$cohorts_path" | tr -d [:space:]`
-    AutoFlow -e -w $CODE_PATH/templates/neuroanalysis_template.af -V $AF_VARS -o $CODE_PATH/results -c 1 -m 5gb -t '03:00:00' $af_add_options
+        \\$cohort_path=$cohort_path" | tr -d [:space:]`
+    AutoFlow -e -w $CODE_PATH/templates/neuroanalysis_template.af -V $AF_VARS -o $CODE_PATH/results -c 1 -m 60gb -t '2-00:00:00' $af_add_options
 fi
 
 #\\$mondo_hpo_file=$CODE_PATH'/tmp_files/neuropathies_hpo_agg.txt',
