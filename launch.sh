@@ -15,6 +15,7 @@ mkdir cohorts
 scripts_path=$CODE_PATH"/scripts"
 cohort_path=$CODE_PATH"/cohorts/decipher.txt"
 
+
 #PATHS TO FILES:
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
 cohorts='decipher'
@@ -25,6 +26,8 @@ diseases='gpn_pro;gpn_nopro;omim;orpha' #gpn == genetic peripheral neuropathies.
 	
 if [ "$mode" == "D" ]; then
 	echo 'Downloading files...'
+	export PATH=$scripts_path:$PATH
+	exit
 	mkdir downloaded_files
 	# 1. Download genes and MONDO file.
 	wget "https://data.monarchinitiative.org/latest/tsv/all_associations/gene_disease.all.tsv.gz" -O downloaded_files/gene_disease.all.tsv.gz
@@ -37,6 +40,13 @@ if [ "$mode" == "D" ]; then
 	gzip -d downloaded_files/population_cnv_grch38.txt.gz
 	# 4. Download phenotype.hpoa file 
 	wget 'http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa' -O downloaded_files/phenotype.hpoa
+	# 5. Download genes_to_phenotype.txt file
+	wget 'http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt' -O downloaded_files/genes_to_phenotype.txt
+	# 6. Download gene symbols (dictionary)
+	wget 'https://www.genenames.org/cgi-bin/download/custom?col=gd_hgnc_id&col=gd_app_sym&col=gd_app_name&col=gd_status&col=gd_prev_sym&col=gd_aliases&col=gd_pub_chrom_map&col=gd_pub_acc_ids&col=gd_pub_refseq_ids&status=Approved&status=Entry%20Withdrawn&hgnc_dbtag=on&order_by=gd_app_sym_sort&format=text&submit=submit' -O downloaded_files/hgnc2gene_symbol.txt
+	grep -w 'Approved' downloaded_files/hgnc2gene_symbol.txt | cut -f 1,2 > downloaded_files/hgnc2gene_symbol_dict
+	awk '(FS="\t"){print $9"\t"$2}' downloaded_files/genes_to_phenotype.txt | tail -n +2 > downloaded_files/omim_orpha_genes.txt
+	translate_genesym2hgnc.rb -d downloaded_files/hgnc2gene_symbol_dict -f downloaded_files/omim_orpha_genes.txt -o downloaded_files/omim_orpha_hgnc_genes.txt
 
 elif [ "$mode" == "C" ]; then
 	tail -n +2 $decipher_file | sed 's/# //g' > cohorts/decipher_file_no_header.txt
@@ -62,7 +72,9 @@ elif [ "$mode" == "S" ]; then
 	# STAGE 1: Prepare MONDO diseases data for analysis: with and without propagation.
 	# ----------
 
-	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/disease_gene.tsv
+	awk '{FS="\t"}{print $5"\t"$1}' downloaded_files/gene_disease.all.tsv | tail -n +2 > downloaded_files/mondo_gene.tsv
+	cat downloaded_files/omim_orpha_hgnc_genes.txt downloaded_files/mondo_gene.tsv > downloaded_files/disease_gene.tsv
+
 	awk '{FS="\t"}{print $1"\t"$5}' downloaded_files/disease_phenotype.all.tsv | tail -n +2 > downloaded_files/disease_phenotype_nofilt.tsv
 	table_header.rb -t downloaded_files/disease_phenotype_nofilt.tsv -c 0,1 -f 1 -k 'HP:' > downloaded_files/disease_phenotype.tsv
 

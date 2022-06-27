@@ -114,17 +114,12 @@ options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: #{__FILE__} [options]"
 
-  options[:expanded_ref] = nil
-  opts.on("-e", "--expanded_refexpanded_ref PATH", "Input reference file with MONDO genes expanded") do |data|
-    options[:expanded_ref] = data
-  end 
-  
   options[:input_paths] = nil
   opts.on("-i", "--input_paths PATH", "Input table with a list of paths to files") do |data|
     options[:input_paths] = data
   end
 
-  options[:output_file] = 'statistics.txt'
+  options[:output_file] = nil
   opts.on("-o", "--output_file PATH", "Output file with statistics") do |data|
     options[:output_file] = data
   end
@@ -148,15 +143,13 @@ path_to_files.each do |filename, path|
 		cohort_data = load_file(path)
 		all_metrics.merge!(calculate_cohort_statistics(cohort_data))
 	elsif filename == "cohort_without_ref"
-
+		#continue
 	elsif filename == "cohort_with_ref"
 		mondo_refs = load_ref(options[:input_ref])
-		mondo_refs_exp = load_ref(options[:expanded_ref])
 		mondo_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_cols.txt'))
 		patient_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_rows.txt'))
-		all_metrics['Number of MONDOs before propagation'] = mondo_refs.keys.length
-		all_metrics['Number of MONDOs after propagation'] = mondo_refs_exp.keys.length
-		all_metrics['Number of MONDOs after clustering'] = mondo_clusters.keys.length
+		all_metrics['Number of diseases'] = mondo_refs.keys.length
+		all_metrics['Number of diseases after clustering'] = mondo_clusters.keys.length
 		all_metrics['Total of clusters in cohort with reference'] = patient_clusters.values.uniq.length
 		all_metrics['Total of patients clustered'] = patient_clusters.keys.uniq.length
 	elsif filename == "ranked_cohort"
