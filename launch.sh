@@ -13,14 +13,22 @@ af_add_options=$2 #AutoFlow Additional options
 mkdir results
 mkdir cohorts
 scripts_path=$CODE_PATH"/scripts"
-cohort_path=$CODE_PATH"/cohorts/decipher.txt"
-
 
 #PATHS TO FILES:
 decipher_file="/mnt/home/users/bio_267_uma/jperkins/data/DECIPHER/decipher-cnvs-grch38-2022-05-15.txt"
-cohorts='decipher'
 kernel_matrix_bin="/mnt/home/users/bio_267_uma/josecordoba/proyectos/phenotypes/ComRelOverIntNet/kernel/kernel_matrix_bin"
 diseases='gpn_pro;gpn_nopro;omim;orpha' #gpn == genetic peripheral neuropathies. defined as autoflow variable.
+
+#PROCESS DECIPHER FILE (uncoment before code upload)
+
+#tail -n +2 $decipher_file | sed 's/# //g' > cohorts/decipher_file_no_header.txt
+#paco_translator.rb -P cohorts/decipher_file_no_header.txt -s start -e end -c chr -d patient_id -p hpo_accessions --n_phens 4 -o cohorts/filtered_decipher.txt
+#awk '{print $1"\t"$3"\t"$4"\t"$5"\t"$2}' cohorts/filtered_decipher.txt > cohorts/decipher.txt
+#sed -i "1i patient_id\tchr\tstart\tstop\tphenotypes" cohorts/decipher.txt
+#rm cohorts/decipher_file_no_header.txt cohorts/filtered_decipher.txt
+
+cohorts='decipher'
+cohort_path=$CODE_PATH"/cohorts/decipher.txt"
 
 #PROCEDURE:
 	
@@ -47,13 +55,6 @@ if [ "$mode" == "D" ]; then
 	grep -w 'Approved' downloaded_files/hgnc2gene_symbol.txt | cut -f 1,2 > downloaded_files/hgnc2gene_symbol_dict
 	awk '(FS="\t"){print $9"\t"$2}' downloaded_files/genes_to_phenotype.txt | tail -n +2 > downloaded_files/omim_orpha_genes.txt
 	translate_genesym2hgnc.rb -d downloaded_files/hgnc2gene_symbol_dict -f downloaded_files/omim_orpha_genes.txt -o downloaded_files/omim_orpha_hgnc_genes.txt
-
-elif [ "$mode" == "C" ]; then
-	tail -n +2 $decipher_file | sed 's/# //g' > cohorts/decipher_file_no_header.txt
-	paco_translator.rb -P cohorts/decipher_file_no_header.txt -s start -e end -c chr -d patient_id -p hpo_accessions --n_phens 4 -o cohorts/filtered_decipher.txt
-	awk '{print $1"\t"$3"\t"$4"\t"$5"\t"$2}' cohorts/filtered_decipher.txt > cohorts/decipher.txt
-	sed -i "1i patient_id\tchr\tstart\tstop\tphenotypes" cohorts/decipher.txt
-	
 
 elif [ "$mode" == "S" ]; then
 	########## Launching Semtools:
@@ -124,8 +125,10 @@ elif [ "$mode" == "S" ]; then
 elif [ "$mode" == "A" ]; then
 	#3. Launch Autoflow:
     AF_VARS=`echo -e "
-        \\$sim_thr=0.4,
+        \\$general_sim_thr=0.6,
+        \\$specific_sim_thr=0.65,
         \\$scripts_path=$scripts_path,
+        \\$decipher_path=$CODE_PATH'/cohorts/decipher.txt',
         \\$disease_gene_list=$CODE_PATH'/downloaded_files/disease_gene.tsv',
         \\$annot_path=~pedro/references/hsGRc38/annotation.gtf,
         \\$erb_template=$CODE_PATH'/templates/report_template.erb',

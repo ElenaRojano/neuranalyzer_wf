@@ -105,6 +105,16 @@ def load_ranked_genes_file(filename)
 	return ranked_genes_data
 end
 
+def cohort_analyzer_extract_metrics(input_ref, tag)
+	mondo_refs = load_ref(input_ref)
+	mondo_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_cols.txt'))
+	patient_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_rows.txt'))
+	all_metrics["Number of diseases (#{tag} cohort)"] = mondo_refs.keys.length
+	all_metrics["Number of diseases after clustering (#{tag} cohort)"] = mondo_clusters.keys.length
+	all_metrics["Total of clusters in cohort with reference (#{tag} cohort)"] = patient_clusters.values.uniq.length
+	all_metrics["Total of patients clustered (#{tag} cohort)"] = patient_clusters.keys.uniq.length
+end
+
 
 ##########################
 #OPT-PARSE
@@ -142,16 +152,10 @@ path_to_files.each do |filename, path|
 	if filename == "cohort"
 		cohort_data = load_file(path)
 		all_metrics.merge!(calculate_cohort_statistics(cohort_data))
-	elsif filename == "cohort_without_ref"
-		#continue
 	elsif filename == "cohort_with_ref"
-		mondo_refs = load_ref(options[:input_ref])
-		mondo_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_cols.txt'))
-		patient_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_rows.txt'))
-		all_metrics['Number of diseases'] = mondo_refs.keys.length
-		all_metrics['Number of diseases after clustering'] = mondo_clusters.keys.length
-		all_metrics['Total of clusters in cohort with reference'] = patient_clusters.values.uniq.length
-		all_metrics['Total of patients clustered'] = patient_clusters.keys.uniq.length
+		cohort_analyzer_extract_metrics(options[:input_ref], 'no filtered')
+	elsif filename == "filtered_cohort"
+		cohort_analyzer_extract_metrics(options[:input_ref], 'filtered')
 	elsif filename == "ranked_cohort"
 		ranked_genes = load_ranked_genes_file(File.join(path, 'ranked_genes_all_candidates'))
 		#see if this info could be valuable to print or use in the summary table
