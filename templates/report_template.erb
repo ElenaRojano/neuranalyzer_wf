@@ -13,6 +13,14 @@
 	%>
 </div>
 
+<div style="width: 90%; background-color:#ecf0f1; margin: 0 auto;">
+	<p> Ranked CNV genes report. </p>
+	<%=boxplot(id: 'ranked_cnvs.txt', header: true, row_names: true, default: false, smp_attr: [2], group: 'cluster') do |table|
+			#table.first.map!{|hcell| 'rank'}
+			#table.unshift(['gene', 'rank', 'cluster'])
+	end
+	%>
+</div>
 
 <div style="width: 90%; background-color:#ecf0f1; margin: 0 auto;">
 	<p> Genes frequency within cluster. </p>
@@ -23,11 +31,10 @@
 	%>
 </div>
 
-
 <div style="width: 90%; background-color:#ecf0f1; margin: 0 auto;">
 	<p> Genes frequency in all clusters </p>
-	<%=boxplot(id: 'cluster_gene_stats.txt', header: false, fields: [0,1], row_names: true) do |table|
-		table.first.map!{|hcell| 'rank'}
+	<%=boxplot(id: 'cluster_gene_stats.txt', header: true, fields: [0,1], row_names: true) do |table|
+		table.first.map!{|hcell| 'percentage'}
 	end
 	%>
 </div>

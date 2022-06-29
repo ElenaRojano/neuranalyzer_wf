@@ -9,6 +9,7 @@
         source ~soft_bio_267/initializes/init_pets
         ?
         coPatReporter.rb -i $cohort_path -o results_raw_decipher -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $path_to_disease_files/(*).txt --sim_thr $general_sim_thr
+        # cut -f 2 results_raw_decipher/temp/lin_clusters_rows.txt | sort | uniq -c # calculate patients per cluster
 }
 
 %neuropathies_analysis_[$diseases]){
@@ -21,7 +22,7 @@
         coPatReporter.rb -i neuropathies_patients.txt -o results_neuropatients -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $path_to_disease_files/(*).txt --sim_thr $specific_sim_thr
 }
 
-extract_patient_cluster_data_[$diseases]){
+%extract_patient_cluster_data_[$diseases]){
         export PATH=$scripts_path:$PATH
         source ~soft_bio_267/initializes/init_netanalyzer
         ?
@@ -54,6 +55,7 @@ generate_report_[$diseases]){
         sed -i "1i gene\trank\tcluster" ranked_candidates.txt
         cut -f 1,4,6 !rank_cnv_genes_*!/ranked_genes_all_candidates > ranked_cnvs.txt
         sed -i "1i gene\trank\tcluster" ranked_cnvs.txt
+        sort -k 2,2 -n !extract_patient_cluster_data_*!/cluster_gene_stats.txt | tail -n 50 > 50_top_genes.txt
         ?
         report_html -t $erb_template -d ranked_candidates.txt,ranked_cnvs.txt,!extract_patient_cluster_data_*!/cluster_gene_stats.txt,statistics.txt
 }
