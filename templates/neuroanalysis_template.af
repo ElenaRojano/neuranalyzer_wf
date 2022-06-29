@@ -11,7 +11,7 @@
         coPatReporter.rb -i $cohort_path -o results_raw_decipher -t freq -p phenotypes -T [cpu] -f 2 -c chr -d patient_id -s start -e stop -C 25 -m lin --reference_profiles $path_to_disease_files/(*).txt --sim_thr $general_sim_thr
 }
 
-neuropathies_analysis_[$diseases]){
+%neuropathies_analysis_[$diseases]){
         #Analyse similarities in patients subset with neuropathies
         source ~soft_bio_267/initializes/init_pets
         cut -f 1 !compare_mondo_*!/temp/lin_clusters_rows.txt > patients_list.txt
@@ -28,21 +28,32 @@ extract_patient_cluster_data_[$diseases]){
         agg_data.rb -a !neuropathies_analysis_*!/temp/profiles_similarity_lin.txt -b !neuropathies_analysis_*!/temp/lin_clusters_rows.txt -o diseases_by_cluster.txt
         get_gen_features.rb -i $cohort_path -o patient_gene_list.txt -c chr -d patient_id -s start -e stop -r $annot_path -t gene -n hgnc_id
         #2. Create list cluster-disease-gene from MONDO/OMIM/Orpha and cluster-patient-gene from DECIPHER:
-        agg_data.rb -e trio -f diseases_by_cluster.txt -d $disease_gene_list -b !neuropathies_analysis_*!/temp/lin_clusters_rows.txt -c patient_gene_list.txt -p cluster_disease_genes.txt
+        agg_data.rb -e trio -f diseases_by_cluster.txt -d $disease_gene_list -b !neuropathies_analysis_*!/temp/lin_clusters_rows.txt -c patient_gene_list.txt -p cluster_disease_genes.txt -q cluster_decipher_genes.txt -r cluster_gene_stats.txt
         cut -f 1,3 cluster_decipher_genes.txt | sort -u | aggregate_column_data.rb -i - -x 0 -a 1 > agg_cluster_genes_by_patients.txt
         cut -f 1,3 cluster_disease_genes.txt | sort -u | aggregate_column_data.rb -i - -x 0 -a 1 > agg_cluster_genes_by_disease.txt
-        ranker_gene.rb -k $kernel_matrix_bin -n $kernel_matrix_bin".lst" -s agg_cluster_genes_by_patients.txt -f agg_cluster_genes_by_disease.txt -o ranked_genes
+        #ranker_gene.rb -k $kernel_matrix_bin -n $kernel_matrix_bin".lst" -s agg_cluster_genes_by_patients.txt -f agg_cluster_genes_by_disease.txt -o ranked_genes
+}
+
+%rank_cnv_genes_[$diseases]){
+        source ~soft_bio_267/initializes/init_netanalyzer
+        #node to rank CNV genes per patient
+        ?
+        ranker_gene.rb -k $kernel_matrix_bin -n $kernel_matrix_bin".lst" -s !extract_patient_cluster_data_*!/agg_cluster_genes_by_disease.txt -f !extract_patient_cluster_data_*!/agg_cluster_genes_by_patients.txt -o ranked_genes
 }
 
 generate_report_[$diseases]){
         export PATH=$scripts_path:$PATH
         source ~soft_bio_267/initializes/init_report_html
         echo -e "cohort\t$cohort_path" > all_paths.txt
-        echo -e "cohort_without_ref\t!analyze_raw_cohort)" >> all_paths.txt
         echo -e "cohort_with_ref\t!compare_mondo_*!" >> all_paths.txt
         echo -e "filtered_cohort\t!neuropathies_analysis_*!" >> all_paths.txt
         echo -e "ranked_cohort\t!extract_patient_cluster_data_*!" >> all_paths.txt
+        echo -e "cnv_genes_ranked\t!rank_cnv_genes_*!" >> all_paths.txt
         statistics.rb -i all_paths.txt -r $path_to_disease_files/(*)'.txt' -o statistics.txt
+        cut -f 1,4,6 !extract_patient_cluster_data_*!/ranked_genes_all_candidates > ranked_candidates.txt
+        sed -i "1i gene\trank\tcluster" ranked_candidates.txt
+        cut -f 1,4,6 !rank_cnv_genes_*!/ranked_genes_all_candidates > ranked_cnvs.txt
+        sed -i "1i gene\trank\tcluster" ranked_cnvs.txt
         ?
-        report_html -t $erb_template -d !extract_patient_cluster_data_*!/ranked_genes_all_candidates,statistics.txt
+        report_html -t $erb_template -d ranked_candidates.txt,ranked_cnvs.txt,!extract_patient_cluster_data_*!/cluster_gene_stats.txt,statistics.txt
 }

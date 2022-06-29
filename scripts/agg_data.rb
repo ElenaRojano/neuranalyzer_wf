@@ -26,11 +26,15 @@ def load_patient_mondo_file(file)
   return patient_mondo_data
 end
 
-def load_two_cols_file(file)
+def load_two_cols_file(file, mode)
   storage = {}
   File.open(file).each do |line|
     line.chomp!
-    col1, col2 = line.split("\t")
+    if mode == '1'
+      col1, col2 = line.split("\t")
+    elsif mode == '2'
+      col2, col1 = line.split("\t")
+    end
     query = storage[col1]
     if query.nil?
       storage[col1] = [col2]
@@ -113,6 +117,34 @@ def join_three_cols(mondo_genes_data, cluster_mondo_data, output_file)
   end
 end
 
+def get_cluster_gene_stats(cluster_patients, patient_gene)
+  cluster_gene_stats = []
+  cluster_patients.each do |clusterID, patients|
+    gene_stat = Hash.new(0)
+    patients.each do |patientID|
+      genes = patient_gene[patientID]
+      unless genes.nil?
+        genes.each do |g| 
+          gene_stat[g] +=1
+        end
+      end
+    end
+    gene_stat.each do |gene, count|
+      cluster_gene_stats << [gene, (count.fdiv(patients.length) * 100).round(3), clusterID]
+    end
+  end
+  return cluster_gene_stats
+end
+
+def save_file(path, content, header)
+  File.open(path, 'w') do |f|
+    f.puts header
+    content.each do |c|
+      f.puts c.join("\t")
+    end
+  end
+end
+
 ##########################
 #OPT-PARSE
 ##########################
@@ -131,7 +163,7 @@ OptionParser.new do |opts|
     options[:input_patient_cluster_file] = data
   end
 
-  options[:input_patient_gene_file] = nil #option not yet used.
+  options[:input_patient_gene_file] = nil
   opts.on("-c", "--input_patient_gene_file PATH", "Input file with patient IDs and gene IDs") do |data|
     options[:input_patient_gene_file] = data
   end
@@ -166,6 +198,14 @@ OptionParser.new do |opts|
     options[:output_cluster_patient_genes] = data
   end
 
+
+  options[:output_cluster_gene_stats] = 'cluster_gene_stats.txt'
+  opts.on("-r", "--output_cluster_gene_stats PATH", "Output file with cluster IDs, genes and percentage of patients within cluster with that gene") do |data|
+    options[:output_cluster_gene_stats] = data
+  end
+
+
+
 end.parse!
 
 ##########################
@@ -173,18 +213,24 @@ end.parse!
 ##########################
 
 if options[:exec_mode] == 'duo'
-  patient_mondo_data = load_two_cols_file(options[:input_patient_mondo_file])
-  patient_cluster_data = load_patient_cluster_file(options[:input_patient_cluster_file])
-  cluster_mondo_data = join_mondo_cluster_by_patients(patient_mondo_data, patient_cluster_data)
-  write_hash(cluster_mondo_data, options[:output_cluster_mondo])
+  patient_mondo_data = load_two_cols_file(options[:input_patient_mondo_file], '1')
+  patient_cluster = load_patient_cluster_file(options[:input_patient_cluster_file])
+  cluster_disease = join_mondo_cluster_by_patients(patient_mondo_data, patient_cluster_data)
+  write_hash(cluster_disease, options[:output_cluster_mondo])
 elsif options[:exec_mode] == 'trio'
-  cluster_mondo_data = load_file_save_hash(options[:input_cluster_mondo_file], '2')
-  mondo_genes_data = load_file_save_hash(options[:input_mondo_gene_file], '1')
-  join_three_cols(mondo_genes_data, cluster_mondo_data, options[:output_cluster_mondo_genes])
+  cluster_disease = load_file_save_hash(options[:input_cluster_mondo_file], '2')
+  disease_genes = load_file_save_hash(options[:input_mondo_gene_file], '1')
+  join_three_cols(disease_genes, cluster_disease, options[:output_cluster_mondo_genes])
   
-  patient_cluster_data = load_two_cols_file(options[:input_patient_cluster_file])
-  patient_gene_data = load_two_cols_file(options[:input_patient_gene_file])
-  join_three_cols(patient_gene_data, patient_cluster_data, options[:output_cluster_patient_genes])
+  patient_cluster = load_two_cols_file(options[:input_patient_cluster_file], '1')
+  cluster_patients = load_two_cols_file(options[:input_patient_cluster_file], '2')
+  patient_gene = load_two_cols_file(options[:input_patient_gene_file], '1')
+  cluster_gene_stats = get_cluster_gene_stats(cluster_patients, patient_gene)
+
+  join_three_cols(patient_gene, patient_cluster, options[:output_cluster_patient_genes])
+  header = "geneID\tpercentage\tcluster"
+  save_file(options[:output_cluster_gene_stats], cluster_gene_stats, header)
+
 else
-  abort('Wrong execution mode. Please choose between 1 and 2')  
+  abort("Wrong #{options[:exec_mode]} execution mode. Please choose between duo and trio")  
 end

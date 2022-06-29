@@ -52,7 +52,7 @@ end
 
 def calculate_cohort_statistics(cohort_data)
 	metrics = {}
-	metrics['Total patients'] = cohort_data.keys.length
+	metrics['Total DECIPHER patients'] = cohort_data.keys.length
 	all_chrs = Hash.new(0)
 	hpos_per_patient = []
 	cohort_data.each do |patientID, patient_records|
@@ -105,11 +105,9 @@ def load_ranked_genes_file(filename)
 	return ranked_genes_data
 end
 
-def cohort_analyzer_extract_metrics(input_ref, tag)
-	mondo_refs = load_ref(input_ref)
+def cohort_analyzer_extract_metrics(path, tag, all_metrics)
 	mondo_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_cols.txt'))
 	patient_clusters = load_two_cols_file(File.join(path, 'temp', 'lin_clusters_rows.txt'))
-	all_metrics["Number of diseases (#{tag} cohort)"] = mondo_refs.keys.length
 	all_metrics["Number of diseases after clustering (#{tag} cohort)"] = mondo_clusters.keys.length
 	all_metrics["Total of clusters in cohort with reference (#{tag} cohort)"] = patient_clusters.values.uniq.length
 	all_metrics["Total of patients clustered (#{tag} cohort)"] = patient_clusters.keys.uniq.length
@@ -146,21 +144,28 @@ end.parse!
 ##########################
 
 path_to_files = load_paths(options[:input_paths])
+disease_refs = load_ref(options[:input_ref])
 
 all_metrics = {}
-path_to_files.each do |filename, path|
+all_metrics["Number of diseases"] = disease_refs.length
+
+
+path_to_files.each do |filename, path|	
 	if filename == "cohort"
 		cohort_data = load_file(path)
 		all_metrics.merge!(calculate_cohort_statistics(cohort_data))
 	elsif filename == "cohort_with_ref"
-		cohort_analyzer_extract_metrics(options[:input_ref], 'no filtered')
+		cohort_analyzer_extract_metrics(path, 'no filtered', all_metrics)
 	elsif filename == "filtered_cohort"
-		cohort_analyzer_extract_metrics(options[:input_ref], 'filtered')
+		cohort_analyzer_extract_metrics(path, 'filtered', all_metrics)
 	elsif filename == "ranked_cohort"
 		ranked_genes = load_ranked_genes_file(File.join(path, 'ranked_genes_all_candidates'))
 		#see if this info could be valuable to print or use in the summary table
+	elsif filename == "cnv_genes_ranked"
+		ranked_cnvs = load_ranked_genes_file(File.join(path, 'ranked_genes_all_candidates'))
+		#see if this info could be valuable to print or use in the summary table
 	else
-		abort("Wrong file name")
+		abort("Wrong file name: #{filename.inspect}")
 	end
 
 end
